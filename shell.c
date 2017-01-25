@@ -6,7 +6,7 @@
    this function takes in a line and a destination array,
    and populates the array with tokens split from the line,
    split by whitespace unless inside a quote block */
-void split (char* line, char tokens[512][256]) {
+void split (char* line, char tokens[256][256]) {
   char current[256];
   int char_index = 0;
   int token_index = 0;
@@ -56,20 +56,54 @@ void split (char* line, char tokens[512][256]) {
   }
 }
 
-int main (int argc, char* argv[]) {
-  FILE* fp;
+/* batch_mode:
+   this function takes in a filepath, opens the
+   file that it points to, and executes the batch
+   of commands within the file, one by one */
+void batch_mode (char* filepath) {
+  FILE* filepointer;
   size_t len;
   ssize_t read;
   char* line;
-  char tokens[512][256];
-  /* one command can hold 512 tokens with 256 characters each */
+  char tokens[256][256];
+  /* one command can hold 256 tokens with 256 characters each */
 
-  fp = fopen(argv[1], "r");
-  while ((read = getline(&line, &len, fp)) != -1) {
+  filepointer = fopen(filepath, "r");
+  while ((read = getline(&line, &len, filepointer)) != EOF) {
     split(line, tokens);
-    // printf("command: %s\n args: %s %s\n\n", tokens[0], tokens[1], tokens[2]);
+    // execute program in tokens[0] with args in tokens[1-511]
     memset(tokens, '\0', sizeof(tokens));
   }
+}
 
+/* interactive_mode:
+   this function prompts the user for
+   commands, executing them as they come */
+void interactive_mode () {
+  char line[65536];
+  char tokens[256][256];
+
+  printf("» ");
+  while (scanf("%s", line) != EOF) {
+    printf("%s\n", line);
+    split(line, tokens);
+    // execute program in tokens[0] with args in tokens[1-511]
+    memset(tokens, '\0', sizeof(tokens));
+    printf("» ");
+  }
+  puts("\n");
+}
+
+int main (int argc, char* argv[]) {
+  if (argc > 1) {
+    batch_mode(argv[1]);
+  }
+  else {
+    interactive_mode();
+  }
   return 0;
 }
+
+/* TODO:
+   start new command (not new token) on semicolon
+   add functionality to actually execute recognized commands (and reject others) */
