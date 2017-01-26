@@ -1,3 +1,4 @@
+pwd; cd   ~/github
 echo "hello  world"
-cd   ~/github; ls
-ping
+ls -lsa; ls
+ping google.com
