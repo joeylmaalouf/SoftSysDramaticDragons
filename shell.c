@@ -35,7 +35,7 @@ void split (char* line, char tokens[256][256]) {
            put our current token into the list and start fresh */
         else if (!in_whitespace) {
           snprintf(tokens[token_index++], 256, "%s", current);
-          memset(current, '\0', sizeof(current));
+          memset(current, 0, sizeof(current));
           char_index = 0;
         }
         in_whitespace = 1;
@@ -56,6 +56,28 @@ void split (char* line, char tokens[256][256]) {
   }
 }
 
+void execute (char args[256][256]) {
+  pid_t pid;
+  int status;
+
+  pid = fork();
+  if (pid < 0) {
+    fprintf(stderr, "Error: could not fork process\n");
+    return;
+  }
+  else if (pid == 0) {
+    if (execvp(*args, args) < 0) {
+      fprintf(stderr, "Error: could not execute command\n");
+      return;
+    }
+  }
+  else {
+    while (wait(&status) != pid) {
+      // do nothing
+    }
+  }
+}
+
 /* batch_mode:
    this function takes in a filepath, opens the
    file that it points to, and executes the batch
@@ -70,9 +92,10 @@ void batch_mode (char* filepath) {
 
   filepointer = fopen(filepath, "r");
   while ((read = getline(&line, &len, filepointer)) != EOF) {
+    printf("%s\n", line);
     split(line, tokens);
-    // execute program in tokens[0] with args in tokens[1-511]
-    memset(tokens, '\0', sizeof(tokens));
+    execute(tokens);
+    memset(tokens, 0, sizeof(tokens));
   }
 }
 
@@ -87,8 +110,8 @@ void interactive_mode () {
   while (scanf("%s", line) != EOF) {
     printf("%s\n", line);
     split(line, tokens);
-    // execute program in tokens[0] with args in tokens[1-511]
-    memset(tokens, '\0', sizeof(tokens));
+    execute(tokens);
+    memset(tokens, 0, sizeof(tokens));
     printf("» ");
   }
   puts("\n");
@@ -103,7 +126,3 @@ int main (int argc, char* argv[]) {
   }
   return 0;
 }
-
-/* TODO:
-   start new command (not new token) on semicolon
-   add functionality to actually execute recognized commands (and reject others) */
