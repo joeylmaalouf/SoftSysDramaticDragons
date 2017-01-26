@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void execute (char* arg) {
+void execute (char** args) {
   pid_t pid;
   int status;
 
@@ -11,7 +11,7 @@ void execute (char* arg) {
     return;
   }
   else if (pid == 0) {
-    if (execvp(*arg, arg) < 0) {
+    if (execvp(*args, args) < 0) {
       fprintf(stderr, "Error: could not execute command\n");
       return;
     }
@@ -24,9 +24,13 @@ void execute (char* arg) {
 }
 
 int main(int argc, char* argv[]) {
-  char cmd[64];
-  scanf("%s", cmd);
-  printf("%s\n", cmd);
-  execute(cmd);
+  char* args[1];
+  printf("» ");
+  while (scanf("%s", args[0]) != EOF) {
+    printf("%s\n", args[0]);
+    execute(args);
+    printf("» ");
+  }
+  puts("\n");
   return 0;
 }
