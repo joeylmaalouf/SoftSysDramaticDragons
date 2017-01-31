@@ -35,3 +35,9 @@ We used this to identify what features a fully functional shell might have that 
 * Rodriguez-Rivera, Gustavo A. Junipero, and Justin Ennen. "Chapter 5. Writing Your Own Shell." Book Online: Introduction to Systems Programming: a Hands-on Approach. Purdue University, 2014. Web. 30 Jan. 2017. <https://www.cs.purdue.edu/homes/grr/SystemsProgrammingBook/Book/Chapter5-WritingYourOwnShell.pdf>.
 
 This explained to us additional user actions to consider, especially when dealing with piping and redirections. It also details a robust parser that gives us a complete grammar of what all potential inputs to the shell look like. We don't expect to do anything as complete, but it gives us a list to choose from in terms of what to support.
+
+#### Potential Roadblocks
+
+* Parsing more complicated expressions
+* Keeping track of responses from child processes for things like redirection
+* Making sure the entire group is on the same page regarding our understanding of the code and any relevant topics, so that we can all work efficiently
