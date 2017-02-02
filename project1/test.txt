@@ -1,3 +1,4 @@
-pwd;  echo "hello    world"
+pwd;  echo "hello    world; how are you?
+I'm doing well :)"
 ls    -lsa
 ping google.com

@@ -28,10 +28,13 @@ int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
     case '\0':
       /* characters separating commands */
       if (!in_quote) {
-        args[*i_cmd][*i_char] = '\0';
-        *count = *i_cmd + 1;
-        *i_cmd = 0;
-        *i_char = 0;
+        if (!in_whitespace) {
+          args[*i_cmd][*i_char] = '\0';
+          *count = *i_cmd + 1;
+          *i_cmd = 0;
+          *i_char = 0;
+        }
+        in_whitespace = 1;
         return 1;
       }
     case ' ':
@@ -159,10 +162,9 @@ int main (int argc, char* argv[]) {
   return 0;
 }
 
-// static ints for flags to avoid flag args?
+// static int declarations to avoid flag/counter args?
 // args counter var (count)?
 // free args[i]
 // free tmp
 // try not to use tmp at all? currently we have static memory allocation for parse and dynamic for execute
 // increment pointer instead of separate index vars?
-// check for empty args before executing?
