@@ -2,127 +2,169 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* split:
-   this function takes in a line and a destination array,
-   and populates the array with tokens split from the line,
-   split by whitespace unless inside a quote block */
-void split (char* line, char tokens[256][256]) {
-  char current[256];
-  int char_index = 0;
-  int token_index = 0;
-  int in_quote = 0;
-  int in_whitespace = 1;
-  int i;
-  for (i = 0; i < strlen(line); ++i) {
-    switch(line[i]) {
-      case '"':
-        /* if we encounter an argument in quotes, we won't split
-           until we reach a split character after the end quote */
-        in_quote = !in_quote;
-        break;
-      case ' ':
-      case '\t':
-      case '\n':
-      case '\0':
-      case EOF:
-        /* if we've hit a splitting character, but we're
-           inside a quote block, keep adding to the token */
-        if (in_quote) {
-          current[char_index++] = line[i];
-        }
-        /* but if we've hit a splitting character outside a
-           quote block, and we're not in the same whitespace,
-           put our current token into the list and start fresh */
-        else if (!in_whitespace) {
-          snprintf(tokens[token_index++], 256, "%s", current);
-          memset(current, 0, sizeof(current));
-          char_index = 0;
+/* parse: check an individual character and either
+ *        add it to a currently-building command or
+ *        start a new command based on the presence
+ *        of whitespace or other separators
+ * c: character to parse
+ * args: array of character arrays to build commands into
+ * i_cmd: the position in the array of the currently-building command
+ * i_char: the position in the command of the current character
+ * count: the tracker for how many arguments were parsed in this command
+ * returns: flag telling main code whether a command is fully parsed
+ */
+int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
+  static int in_quote = 0;
+  static int in_whitespace = 1;
+  switch(c) {
+    case '"':
+      in_quote = !in_quote;
+      return 0;
+    case EOF:
+      // do extra processing so ctrl-D exits immediately, even if other commands preceded it?
+    case ';':
+      // figure out why ; stopped working
+    case '\n':
+    case '\0':
+      /* characters separating commands */
+      if (!in_quote) {
+        if (!in_whitespace) {
+          args[*i_cmd][*i_char] = '\0';
+          *count = *i_cmd + 1;
+          *i_cmd = 0;
+          *i_char = 0;
         }
         in_whitespace = 1;
-        break;
-      default:
-        /* if we haven't yet hit a token to split on,
-           keep adding the characters to the current token */
-        in_whitespace = 0;
+        return 1;
+      }
+    case ' ':
+    case '\t':
+      /* characters separating arguments */
+      if (!in_quote) {
         if (!in_whitespace) {
-          current[char_index++] = line[i];
+          args[*i_cmd][*i_char] = '\0';
+          ++*i_cmd;
+          *i_char = 0;
         }
-    }
-  }
-  /* catch any remaining tokens, in case the
-     file doesn't end in a space/newline/etc. */
-  if (current[0] != '\0') {
-    snprintf(tokens[token_index], 256, "%s", current);
+        in_whitespace = 1;
+        return 0;
+      }
+    default:
+      /* characters composing tokens */
+      args[*i_cmd][*i_char] = c;
+      ++*i_char;
+      in_whitespace = 0;
+      return 0;
   }
 }
 
-void execute (char args[256][256]) {
-  pid_t pid;
-  int status;
+/* is_blank: checks if the given string is just whitespace
+ * string: the string to parse
+ * returns: flag saying whether the string is only whitespace
+ */
+int is_blank (char* string) {
+  int i;
+  for (i = 0; i < strlen(string); ++i) {
+    if (!isspace(string[i])) {
+      return 0;
+    }
+  }
+  return 1;
+}
 
+/* execute: forks a new process to run the given command,
+ *          along with any arguments provided, after checking
+ *          to make sure that the command is not empty
+ * args: array of character arrays representing
+ *       the command and any other arguments
+ * returns: nothing
+ */
+void execute (char** args) {
+  int i = 0;
+  int blank_status = 1;
+  int wait_status;
+  pid_t pid;
+
+  /* make sure we have at least one non-empty word */
+  while (args[i] != NULL) {
+    if (!is_blank(args[i++])) {
+      blank_status = 0;
+    }
+  }
+  if (blank_status) {
+    return;
+  }
+
+  /* make sure we can fork a new process */
   pid = fork();
   if (pid < 0) {
     fprintf(stderr, "Error: could not fork process\n");
     return;
   }
   else if (pid == 0) {
+    /* make sure we can execute the command */
     if (execvp(*args, args) < 0) {
       fprintf(stderr, "Error: could not execute command\n");
       return;
     }
   }
   else {
-    while (wait(&status) != pid) {
-      // do nothing
+    while (wait(&wait_status) != pid) {
+      /* wait for the command to finish */
     }
   }
 }
 
-/* batch_mode:
-   this function takes in a filepath, opens the
-   file that it points to, and executes the batch
-   of commands within the file, one by one */
-void batch_mode (char* filepath) {
-  FILE* filepointer;
-  size_t len;
-  ssize_t read;
-  char* line;
-  char tokens[256][256];
-  /* one command can hold 256 tokens with 256 characters each */
-
-  filepointer = fopen(filepath, "r");
-  while ((read = getline(&line, &len, filepointer)) != EOF) {
-    printf("%s\n", line);
-    split(line, tokens);
-    execute(tokens);
-    memset(tokens, 0, sizeof(tokens));
-  }
-}
-
-/* interactive_mode:
-   this function prompts the user for
-   commands, executing them as they come */
-void interactive_mode () {
-  char line[65536];
-  char tokens[256][256];
-
-  printf("» ");
-  while (scanf("%s", line) != EOF) {
-    printf("%s\n", line);
-    split(line, tokens);
-    execute(tokens);
-    memset(tokens, 0, sizeof(tokens));
-    printf("» ");
-  }
-  puts("\n");
-}
-
+/* main: reads commands and args from stdin (batch file or
+ *       user input) and executes them in order after parsing
+ * argc: the number of command line arguments
+ * argv: the values of command line arguments
+ * returns: exit code
+ */
 int main (int argc, char* argv[]) {
+  FILE *fp;
+  char c;
+  int interactive;
+  char tmp[256][256];
+  char** args;
+  int i_cmd = 0;
+  int i_char = 0;
+  int count = 0;
+  int i;
+
   if (argc > 1) {
-    batch_mode(argv[1]);
+    fp = fopen(argv[1], "r");
+    interactive = 0;
   }
   else {
-    interactive_mode();
+    fp = stdin;
+    interactive = 1;
+    printf("» ");
   }
+  do {
+    c = fgetc(fp);
+    if (parse(c, tmp, &i_cmd, &i_char, &count)) {
+      args = malloc(count * sizeof(char*));
+      for (i = 0; i < count; ++i) {
+        args[i] = malloc(256 * sizeof(char));
+        strcpy(args[i], tmp[i]);
+      }
+      execute(args);
+      count = 0;
+    }
+    if (interactive && c == '\n') {
+      printf("» ");
+    }
+  } while (c != EOF);
+  printf("\n");
+  free(args);
+
   return 0;
 }
+
+// static int declarations to avoid flag/counter args?
+// args counter var (count)?
+// free args[i]
+// free tmp
+// try not to use tmp at all? currently we have static memory allocation for parse and dynamic for execute
+// increment pointer instead of separate index vars?
