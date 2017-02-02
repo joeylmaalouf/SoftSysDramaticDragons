@@ -8,14 +8,14 @@
  *        of whitespace or other separators
  * c: character to parse
  * args: array of character arrays to build commands into
- * i_cmd: the position in the array of the currently-building command
- * i_char: the position in the command of the current character
  * count: the tracker for how many arguments were parsed in this command
  * returns: flag telling main code whether a command is fully parsed
  */
-int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
+int parse (char c, char args[256][256], int* count) {
   static int in_quote = 0;
   static int in_whitespace = 1;
+  static int i_cmd = 0;
+  static int i_char = 0;
   switch(c) {
     case '"':
       in_quote = !in_quote;
@@ -29,10 +29,10 @@ int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
       /* characters separating commands */
       if (!in_quote) {
         if (!in_whitespace) {
-          args[*i_cmd][*i_char] = '\0';
-          *count = *i_cmd + 1;
-          *i_cmd = 0;
-          *i_char = 0;
+          args[i_cmd][i_char] = '\0';
+          *count = i_cmd + 1;
+          i_cmd = 0;
+          i_char = 0;
         }
         in_whitespace = 1;
         return 1;
@@ -42,17 +42,17 @@ int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
       /* characters separating arguments */
       if (!in_quote) {
         if (!in_whitespace) {
-          args[*i_cmd][*i_char] = '\0';
-          ++*i_cmd;
-          *i_char = 0;
+          args[i_cmd][i_char] = '\0';
+          ++i_cmd;
+          i_char = 0;
         }
         in_whitespace = 1;
         return 0;
       }
     default:
       /* characters composing tokens */
-      args[*i_cmd][*i_char] = c;
-      ++*i_char;
+      args[i_cmd][i_char] = c;
+      ++i_char;
       in_whitespace = 0;
       return 0;
   }
@@ -127,8 +127,6 @@ int main (int argc, char* argv[]) {
   int interactive;
   char tmp[256][256];
   char** args;
-  int i_cmd = 0;
-  int i_char = 0;
   int count = 0;
   int i;
 
@@ -143,7 +141,7 @@ int main (int argc, char* argv[]) {
   }
   do {
     c = fgetc(fp);
-    if (parse(c, tmp, &i_cmd, &i_char, &count)) {
+    if (parse(c, tmp, &count)) {
       args = malloc(count * sizeof(char*));
       for (i = 0; i < count; ++i) {
         args[i] = malloc(256 * sizeof(char));
@@ -162,7 +160,6 @@ int main (int argc, char* argv[]) {
   return 0;
 }
 
-// static int declarations to avoid flag/counter args?
 // args counter var (count)?
 // free args[i]
 // free tmp
