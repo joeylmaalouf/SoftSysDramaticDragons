@@ -42,30 +42,59 @@ int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
   }
 }
 
+/* is_blank: checks if the given string is just whitespace
+ * string: the string to parse
+ * returns: flag saying whether the string is only whitespace
+ */
+int is_blank (char* string) {
+  int i;
+  for (i = 0; i < strlen(string); ++i) {
+    if (!isspace(string[i])) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
 /* execute: forks a new process to run the given command,
- *          along with any arguments provided
+ *          along with any arguments provided, after checking
+ *          to make sure that the command is not empty
  * args: array of character arrays representing
- *       the command and any other arguments 
+ *       the command and any other arguments
  * returns: nothing
  */
 void execute (char** args) {
+  int i = 0;
+  int blank_status = 1;
+  int wait_status;
   pid_t pid;
-  int status;
 
+  /* make sure we have at least one non-empty word */
+  while (args[i] != NULL) {
+    if (!is_blank(args[i++])) {
+      blank_status = 0;
+    }
+  }
+  if (blank_status) {
+    return;
+  }
+
+  /* make sure we can fork a new process */
   pid = fork();
   if (pid < 0) {
     fprintf(stderr, "Error: could not fork process\n");
     return;
   }
   else if (pid == 0) {
+    /* make sure we can execute the command */
     if (execvp(*args, args) < 0) {
       fprintf(stderr, "Error: could not execute command\n");
       return;
     }
   }
   else {
-    while (wait(&status) != pid) {
-      /* do nothing */
+    while (wait(&wait_status) != pid) {
+      /* wait for the command to finish */
     }
   }
 }
@@ -116,3 +145,11 @@ int main (int argc, char* argv[]) {
 
   return 0;
 }
+
+// static ints for flags to avoid flag args?
+// args counter var (count)?
+// free args[i]
+// free tmp
+// try not to use tmp at all? currently we have static memory allocation for parse and dynamic for execute
+// increment pointer instead of separate index vars?
+// check for empty args before executing?
