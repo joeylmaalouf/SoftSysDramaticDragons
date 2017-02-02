@@ -14,26 +14,34 @@
  * returns: flag telling main code whether a command is fully parsed
  */
 int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
+  static int in_quote = 0;
+  // static int in_whitespace = 1;
   switch(c) {
-    // re-add checks for quote blocks and repeated whitespace?
+    case '"':
+      in_quote = !in_quote;
+      return 0;
     case EOF:
       // do extra processing so ctrl-D exits immediately, even if other commands preceded it?
     case ';':
     case '\n':
     case '\0':
       /* characters separating commands */
-      args[*i_cmd][*i_char] = '\0';
-      *count = *i_cmd + 1;
-      *i_cmd = 0;
-      *i_char = 0;
-      return 1;
+      if (!in_quote) {
+        args[*i_cmd][*i_char] = '\0';
+        *count = *i_cmd + 1;
+        *i_cmd = 0;
+        *i_char = 0;
+        return 1;
+      }
     case ' ':
     case '\t':
       /* characters separating arguments */
-      args[*i_cmd][*i_char] = '\0';
-      ++*i_cmd;
-      *i_char = 0;
-      return 0;
+      if (!in_quote) {
+        args[*i_cmd][*i_char] = '\0';
+        ++*i_cmd;
+        *i_char = 0;
+        return 0;
+      }
     default:
       /* characters composing tokens */
       args[*i_cmd][*i_char] = c;
