@@ -15,7 +15,7 @@
  */
 int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
   static int in_quote = 0;
-  // static int in_whitespace = 1;
+  static int in_whitespace = 1;
   switch(c) {
     case '"':
       in_quote = !in_quote;
@@ -23,6 +23,7 @@ int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
     case EOF:
       // do extra processing so ctrl-D exits immediately, even if other commands preceded it?
     case ';':
+      // figure out why ; stopped working
     case '\n':
     case '\0':
       /* characters separating commands */
@@ -37,15 +38,19 @@ int parse (char c, char args[256][256], int* i_cmd, int* i_char, int* count) {
     case '\t':
       /* characters separating arguments */
       if (!in_quote) {
-        args[*i_cmd][*i_char] = '\0';
-        ++*i_cmd;
-        *i_char = 0;
+        if (!in_whitespace) {
+          args[*i_cmd][*i_char] = '\0';
+          ++*i_cmd;
+          *i_char = 0;
+        }
+        in_whitespace = 1;
         return 0;
       }
     default:
       /* characters composing tokens */
       args[*i_cmd][*i_char] = c;
       ++*i_char;
+      in_whitespace = 0;
       return 0;
   }
 }

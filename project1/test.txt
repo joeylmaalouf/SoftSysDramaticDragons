@@ -1,4 +1,3 @@
-pwd; cd   ~/github
-echo "hello  world"
-ls -lsa; ls
+pwd;  echo "hello    world"
+ls    -lsa
 ping google.com
