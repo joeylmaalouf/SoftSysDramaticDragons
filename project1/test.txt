@@ -1,4 +1,4 @@
-pwd;  echo "hello    world; how are you?
-I'm doing well :)"
+pwd;  echo "   hello  world; how are you? #;_;#
+I'm doing well :) "
 ls    -lsa
-ping google.com
+ping google.com # I'm invisible!
