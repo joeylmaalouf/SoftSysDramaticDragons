@@ -156,6 +156,9 @@ int main (int argc, char* argv[]) {
         }
       }
       execute(args);
+      for (i = 0; i < count; ++i) {
+        free(args[i]);
+      }
       count = 0;
     }
     if (interactive && (c == '\n')) {
@@ -169,6 +172,4 @@ int main (int argc, char* argv[]) {
 }
 
 // potential tweaks:
-// args counter var (count)?
-// free args[i]
 // increment pointer instead of separate index vars?
