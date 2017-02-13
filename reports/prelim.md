@@ -67,14 +67,14 @@ PING google.com (172.217.2.14) 56(84) bytes of data.
 rtt min/avg/max/mdev = 20.432/34.962/42.316/10.277 ms
 ```
 
-  #### Annotated Bibliography
+#### Annotated Bibliography
 
 [updated version of same section in proposal]
 
-  #### Product Backlog
+#### Product Backlog
 
 https://trello.com/b/aKHeJdbc/softsysdramaticdragons
 
-  #### Roadblocks
+#### Roadblocks
 
 [updated version of same section in proposal]
