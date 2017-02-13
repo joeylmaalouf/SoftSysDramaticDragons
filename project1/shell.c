@@ -25,9 +25,6 @@ int parse (char c, char args[256][256], int* count) {
     return 0;
   }
   switch (c) {
-    case '#':
-      in_comment = 1;
-      return 0;
     case '"':
       in_quote = !in_quote;
       return 0;
@@ -61,6 +58,11 @@ int parse (char c, char args[256][256], int* count) {
         return 0;
       }
     default:
+      /* cases dependent on other flags */
+      if ((c == '#') && !in_quote) {
+        in_comment = 1;
+        return 0;
+      }
       /* characters composing tokens */
       args[i_cmd][i_char] = c;
       ++i_char;
