@@ -22,7 +22,7 @@ For this project, we want to write our own shell. At minimum, it should be able 
   * [Sean's work](https://github.com/SeanCCarter/ExercisesInC/blob/master/reading_questions/thinkos6.md)
 * Parsing
   * [fleshed out `parse` function further](../project1/shell.c#L9)
-  * [debugged issues with whitespace, empty args, quotes, and comments](c195a1fbe022441f8d5f9369323a9cb920a10375)
+  * [debugged issues with whitespace, empty args, quotes, and comments](../../../commit/c195a1fbe022441f8d5f9369323a9cb920a10375)
 
   #### Preliminary Results
 
