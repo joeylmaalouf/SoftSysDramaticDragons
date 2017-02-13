@@ -11,15 +11,15 @@
 * HFC 2.5
   * [Joey's work](https://github.com/joeylmaalouf/ExercisesInC/tree/master/exercises/ex02.5)
   * [Apurva's work]()
-  * Sean['s work]()
+  * [Sean's work](https://github.com/SeanCCarter/ExercisesInC/tree/master/exercises/ex02.5)
 * HFC 9
   * [Joey's work](https://github.com/joeylmaalouf/ExercisesInC/tree/master/exercises/ex09)
   * [Apurva's work]()
-  * Sean['s work]()
+  * [Sean's work](https://github.com/SeanCCarter/ExercisesInC/tree/master/exercises/ex09)
 * ThinkOS 6
   * [Joey's work](https://github.com/joeylmaalouf/ExercisesInC/blob/master/reading_questions/thinkos.md#chapter-6)
   * [Apurva's work]()
-  * Sean['s work]()
+  * [Sean's work](https://github.com/SeanCCarter/ExercisesInC/blob/master/reading_questions/thinkos6.md)
 * Parsing
   * [`parse` function](../project1/shell.c#L9)
 
@@ -68,5 +68,13 @@ rtt min/avg/max/mdev = 20.432/34.962/42.316/10.277 ms
 ```
 
   #### Annotated Bibliography
+
+[updated version of same section in proposal]
+
+  #### Product Backlog
+
+https://trello.com/b/aKHeJdbc/softsysdramaticdragons
+
+  #### Roadblocks
 
 [updated version of same section in proposal]
