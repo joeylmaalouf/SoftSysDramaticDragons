@@ -15,8 +15,6 @@ typedef struct Alias {
 
 Alias aliases[ARRSIZE];
 int num_aliases;
-// » alias list = ls -ahls
-// aliases[n] = (Alias) { .custom = "list", .original = ["ls", "-ahls"] };
 
 char* unalias (char* alias) {
   // TODO
@@ -177,7 +175,13 @@ int main (int argc, char* argv[]) {
       }
       if ((j >= 4) && (strcmp(args[0], "alias") == 0)
           && (strcmp(args[2], "=") == 0)) {
-        // aliases[num_aliases++] = (Alias) { .custom = args[1], .original = args[3:] };
+        Alias a;
+        memset(&a, 0, sizeof(Alias));
+        strcpy(a.custom, args[1]);
+        for (i = 0; i < j - 3; ++i) {
+          strcpy(a.original[i], args[3 + i]);
+        }
+        aliases[num_aliases++] = a;
       }
       else if ((j == 3) && (strcmp(args[0], "prompt") == 0)
           && (strcmp(args[1], "=") == 0)) {
@@ -185,7 +189,7 @@ int main (int argc, char* argv[]) {
       }
       else {
         // unalias here? check if any substring in args is aliased to anything; if so, substitute it back
-        // NOTE: if any spaces or tabs in alias, they have to be new char*s and the array has to shift (realloc args?)
+        // NOTE: if len(alias.original) > 1, they have to be new char*s so the array has to shift (realloc args, iterate in reverse)
         execute(args);
       }
       for (i = 0; i < count; ++i) {
