@@ -16,6 +16,9 @@ typedef struct Alias {
 Alias aliases[ARRSIZE];
 int num_aliases;
 
+// TODO: This really shouldn't be a global. It really shouldn't.
+char prompt[ARRSIZE] = "» ";
+
 char* unalias (char* alias) {
   // TODO
   return alias;
@@ -134,33 +137,21 @@ void execute (char** args) {
   }
 }
 
-/* main: reads commands and args from stdin (batch file or
- *       user input) and executes them in order after parsing
- * argc: the number of command line arguments
- * argv: the values of command line arguments
- * returns: exit code
+/* execute: loops through every line of a file,
+ *          parses it with parse(), and passes the result
+ *          into execute()
+ * fp: struct of type FILE * that points to a file
+ * interactive: integer flag to print the prompt text
+ * returns: nothing
  */
-int main (int argc, char* argv[]) {
-  FILE *fp;
+void exec_loop(FILE *fp, int interactive){
   char c;
-  int interactive, ready;
+  int ready;
   char tmp[ARRSIZE][ARRSIZE];
   char** args;
   int i, j;
-  char prompt[ARRSIZE] = "» ";
   int count = 0;
-  num_aliases = 0;
 
-  if (argc > 1) {
-    // change to accept n-many files to run in order?
-    fp = fopen(argv[1], "r");
-    interactive = 0;
-  }
-  else {
-    fp = stdin;
-    interactive = 1;
-    printf("%s", prompt);
-  }
   do {
     c = fgetc(fp);
     ready = parse(c, tmp, &count);
@@ -201,8 +192,45 @@ int main (int argc, char* argv[]) {
       printf("%s", prompt);
     }
   } while (c != EOF);
-  printf("\n");
   free(args);
+}
+
+/* main: reads commands and args from stdin (batch file or
+ *       user input) and executes them in order after parsing
+ * argc: the number of command line arguments
+ * argv: the values of command line arguments
+ * returns: exit code
+ */
+int main (int argc, char* argv[]) {
+  FILE *fp;
+  int interactive;
+  num_aliases = 0;
+  
+
+  //Check to see if the config file exists
+  if( access( ".shellrc", F_OK ) != -1 ) {
+    fp = fopen(".shellrc", "r");
+    exec_loop(fp, 0); //execute the config file like normal file
+    printf("Configuration loaded\n");
+  } 
+  else{
+    printf("No configuration found.\n");
+  }
+
+  if (argc > 1) {
+    // change to accept n-many files to run in order?
+    fp = fopen(argv[1], "r");
+    interactive = 0;
+  }
+  else {
+    fp = stdin;
+    interactive = 1;
+    printf("%s", prompt);
+  }
+  
+  exec_loop(fp, interactive);
+  printf("\n");
+  
 
   return 0;
 }
