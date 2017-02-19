@@ -16,13 +16,7 @@ typedef struct Alias {
 Alias aliases[ARRSIZE];
 int num_aliases;
 
-// TODO: This really shouldn't be a global. It really shouldn't.
-char prompt[ARRSIZE] = "» ";
-
-char* unalias (char* alias) {
-  // TODO
-  return alias;
-}
+char prompt[ARRSIZE];
 
 /* parse: check an individual character and either
  *        add it to a currently-building command or
@@ -137,14 +131,23 @@ void execute (char** args) {
   }
 }
 
-/* execute: loops through every line of a file,
- *          parses it with parse(), and passes the result
- *          into execute()
- * fp: struct of type FILE * that points to a file
- * interactive: integer flag to print the prompt text
+/* unalias: ...
+ * alias: ...
+ * returns: ...
+ */
+char* unalias (char* alias) {
+  // TODO
+  return alias;
+}
+
+/* exec_loop: loops through every line of a file,
+ *            parses it with parse(), and passes the result
+ *            into execute()
+ * fp: file pointer to read commands from
+ * interactive: integer flag for the run mode
  * returns: nothing
  */
-void exec_loop(FILE *fp, int interactive){
+void exec_loop (FILE* fp, int interactive) {
   char c;
   int ready;
   char tmp[ARRSIZE][ARRSIZE];
@@ -153,9 +156,11 @@ void exec_loop(FILE *fp, int interactive){
   int count = 0;
 
   do {
+    /* repeatedly check the input and split it into tokens */
     c = fgetc(fp);
     ready = parse(c, tmp, &count);
     if (ready) {
+      /* copy the non-blank tokens into the argument array */
       args = calloc(count, sizeof(char*));
       j = 0;
       for (i = 0; i < count; ++i) {
@@ -164,6 +169,7 @@ void exec_loop(FILE *fp, int interactive){
           strcpy(args[j++], tmp[i]);
         }
       }
+      /* check for the special case of assigning an alias */
       if ((j >= 4) && (strcmp(args[0], "alias") == 0)
           && (strcmp(args[2], "=") == 0)) {
         Alias a;
@@ -174,10 +180,12 @@ void exec_loop(FILE *fp, int interactive){
         }
         aliases[num_aliases++] = a;
       }
+      /* check for the special case of customizing the prompt */
       else if ((j == 3) && (strcmp(args[0], "prompt") == 0)
           && (strcmp(args[1], "=") == 0)) {
         strcpy(prompt, args[2]);
       }
+      /* execute the given command */
       else {
         // unalias here? check if any substring in args is aliased to anything; if so, substitute it back
         // NOTE: if len(alias.original) > 1, they have to be new char*s so the array has to shift (realloc args, iterate in reverse)
@@ -205,20 +213,16 @@ int main (int argc, char* argv[]) {
   FILE *fp;
   int interactive;
   num_aliases = 0;
-  
+  strcpy(prompt, "» ");
 
-  //Check to see if the config file exists
-  if( access( ".shellrc", F_OK ) != -1 ) {
+  /* execute the contents of the config file if it exists */
+  if (access(".shellrc", F_OK) != -1) {
     fp = fopen(".shellrc", "r");
-    exec_loop(fp, 0); //execute the config file like normal file
-    printf("Configuration loaded\n");
-  } 
-  else{
-    printf("No configuration found.\n");
+    exec_loop(fp, 0);
   }
 
   if (argc > 1) {
-    // change to accept n-many files to run in order?
+    // change to accept n-many files to run in order, instead of restricting batch mode to 1 file?
     fp = fopen(argv[1], "r");
     interactive = 0;
   }
@@ -227,10 +231,9 @@ int main (int argc, char* argv[]) {
     interactive = 1;
     printf("%s", prompt);
   }
-  
+
   exec_loop(fp, interactive);
   printf("\n");
-  
 
   return 0;
 }
