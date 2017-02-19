@@ -6,18 +6,17 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define SIZE 256
+#define ARRSIZE 256
 
 typedef struct Alias {
-  char* custom;
-  char* original;
+  char custom[ARRSIZE];
+  char original[ARRSIZE][ARRSIZE];
 } Alias;
 
-Alias* aliases;
-
-void load_aliases () {
-  // TODO
-}
+Alias aliases[ARRSIZE];
+int num_aliases;
+// » alias list = ls -ahls
+// aliases[n] = (Alias) { .custom = "list", .original = ["ls", "-ahls"] };
 
 char* unalias (char* alias) {
   // TODO
@@ -33,7 +32,7 @@ char* unalias (char* alias) {
  * count: the tracker for how many arguments were parsed in this command
  * returns: flag telling main code whether a command is fully parsed
  */
-int parse (char c, char args[SIZE][SIZE], int* count) {
+int parse (char c, char args[ARRSIZE][ARRSIZE], int* count) {
   static int in_comment = 0;
   static int in_quote = 0;
   static int in_whitespace = 1;
@@ -55,7 +54,6 @@ int parse (char c, char args[SIZE][SIZE], int* count) {
       /* characters separating commands */
       if (!in_quote) {
         if (!in_whitespace) {
-          // unalias here? check if args[i_cmd] is aliased to anything; if so, write its actual value into args[i_cmd]
           args[i_cmd][i_char] = '\0';
           *count = i_cmd + 1;
           i_cmd = 0;
@@ -148,40 +146,55 @@ int main (int argc, char* argv[]) {
   FILE *fp;
   char c;
   int interactive, ready;
-  char tmp[SIZE][SIZE];
+  char tmp[ARRSIZE][ARRSIZE];
   char** args;
-  int count = 0;
   int i, j;
+  char prompt[ARRSIZE] = "» ";
+  int count = 0;
+  num_aliases = 0;
 
   if (argc > 1) {
+    // change to accept n-many files to run in order?
     fp = fopen(argv[1], "r");
     interactive = 0;
   }
   else {
     fp = stdin;
     interactive = 1;
-    printf("» ");
+    printf("%s", prompt);
   }
   do {
     c = fgetc(fp);
     ready = parse(c, tmp, &count);
     if (ready) {
       args = calloc(count, sizeof(char*));
-      j = -1;
+      j = 0;
       for (i = 0; i < count; ++i) {
         if(!is_blank(tmp[i])) {
-          args[++j] = calloc(SIZE, sizeof(char));
-          strcpy(args[j], tmp[i]);
+          args[j] = calloc(ARRSIZE, sizeof(char));
+          strcpy(args[j++], tmp[i]);
         }
       }
-      execute(args);
+      if ((j >= 4) && (strcmp(args[0], "alias") == 0)
+          && (strcmp(args[2], "=") == 0)) {
+        // aliases[num_aliases++] = (Alias) { .custom = args[1], .original = args[3:] };
+      }
+      else if ((j == 3) && (strcmp(args[0], "prompt") == 0)
+          && (strcmp(args[1], "=") == 0)) {
+        strcpy(prompt, args[2]);
+      }
+      else {
+        // unalias here? check if any substring in args is aliased to anything; if so, substitute it back
+        // NOTE: if any spaces or tabs in alias, they have to be new char*s and the array has to shift (realloc args?)
+        execute(args);
+      }
       for (i = 0; i < count; ++i) {
         free(args[i]);
       }
       count = 0;
     }
     if (interactive && (c == '\n')) {
-      printf("» ");
+      printf("%s", prompt);
     }
   } while (c != EOF);
   printf("\n");
