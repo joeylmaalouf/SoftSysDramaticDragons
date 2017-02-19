@@ -8,3 +8,6 @@
 !*/
 
 # Now we've ignored all files with no extensions (our binaries)
+
+# Unignore Makefiles
+!Makefile

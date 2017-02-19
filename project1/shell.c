@@ -6,6 +6,24 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define SIZE 256
+
+typedef struct Alias {
+  char* custom;
+  char* original;
+} Alias;
+
+Alias* aliases;
+
+void load_aliases () {
+  // TODO
+}
+
+char* unalias (char* alias) {
+  // TODO
+  return alias;
+}
+
 /* parse: check an individual character and either
  *        add it to a currently-building command or
  *        start a new command based on the presence
@@ -15,7 +33,7 @@
  * count: the tracker for how many arguments were parsed in this command
  * returns: flag telling main code whether a command is fully parsed
  */
-int parse (char c, char args[256][256], int* count) {
+int parse (char c, char args[SIZE][SIZE], int* count) {
   static int in_comment = 0;
   static int in_quote = 0;
   static int in_whitespace = 1;
@@ -37,6 +55,7 @@ int parse (char c, char args[256][256], int* count) {
       /* characters separating commands */
       if (!in_quote) {
         if (!in_whitespace) {
+          // unalias here? check if args[i_cmd] is aliased to anything; if so, write its actual value into args[i_cmd]
           args[i_cmd][i_char] = '\0';
           *count = i_cmd + 1;
           i_cmd = 0;
@@ -129,7 +148,7 @@ int main (int argc, char* argv[]) {
   FILE *fp;
   char c;
   int interactive, ready;
-  char tmp[256][256];
+  char tmp[SIZE][SIZE];
   char** args;
   int count = 0;
   int i, j;
@@ -151,7 +170,7 @@ int main (int argc, char* argv[]) {
       j = -1;
       for (i = 0; i < count; ++i) {
         if(!is_blank(tmp[i])) {
-          args[++j] = calloc(256, sizeof(char));
+          args[++j] = calloc(SIZE, sizeof(char));
           strcpy(args[j], tmp[i]);
         }
       }
@@ -170,6 +189,3 @@ int main (int argc, char* argv[]) {
 
   return 0;
 }
-
-// potential tweaks:
-// increment pointer instead of separate index vars?
