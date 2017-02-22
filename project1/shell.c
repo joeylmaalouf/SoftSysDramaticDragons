@@ -26,10 +26,14 @@ typedef enum {
 typedef struct Alias {
   char custom[ARRSIZE];
   char original[ARRSIZE][ARRSIZE];
+  int num_original;
 } Alias;
 
 Alias aliases[ARRSIZE];
-int num_aliases;
+
+size_t num_aliases;
+
+size_t num_args;
 
 char prompt[ARRSIZE];
 
@@ -39,10 +43,9 @@ char prompt[ARRSIZE];
  *        of whitespace or other separators
  * c: character to parse
  * args: array of character arrays to build commands into
- * count: the tracker for how many arguments were parsed in this command
  * returns: flag telling main code whether a command is fully parsed
  */
-bool parse (char c, char args[ARRSIZE][ARRSIZE], int* count) {
+bool parse (char c, char args[ARRSIZE][ARRSIZE]) {
   static bool in_comment = false;
   static bool in_quote = false;
   static bool in_whitespace = true;
@@ -65,7 +68,7 @@ bool parse (char c, char args[ARRSIZE][ARRSIZE], int* count) {
       if (!in_quote) {
         if (!in_whitespace) {
           args[i_cmd][i_char] = '\0';
-          *count = i_cmd + 1;
+          num_args = i_cmd + 1;
           i_cmd = 0;
           i_char = 0;
         }
@@ -153,10 +156,21 @@ void execute (char** args) {
  * alias: ...
  * returns: ...
  */
-void unalias (char* args[ARRSIZE]) {
-  // size_t i;
-  // for (i = 0; i < count; i++) {
-  // }
+void unalias (char** args) {
+  size_t i, j;
+  for (i = 0; i < num_args; ++i) {
+    for (j = 0; j < num_aliases; ++j) {
+      if (strcmp(args[i], aliases[j].custom) == 0) {
+        if (aliases[j].num_original == 1) {
+          strcpy(args[i], aliases[j].original[0]);
+        }
+        else {
+          args = realloc(args, num_args * sizeof(char*));
+          // ...
+        }
+      }
+    }
+  }
   // check if any command in args is aliased to anything; if so, substitute it back
   // if len(alias.original) > 1, they have to be new char*s so the array has to shift
   // new_size = len(args) + len(alias.original) - 1
@@ -174,56 +188,58 @@ void unalias (char* args[ARRSIZE]) {
 void exec_loop (FILE* fp, bool interactive) {
   char c;
   bool ready;
-  char tmp[ARRSIZE][ARRSIZE];
-  char** args;
+  char args[ARRSIZE][ARRSIZE];
+  char** parsed_args;
   size_t i, j;
-  int count = 0;
+  num_args = 0;
 
   do {
     /* repeatedly check the input and split it into tokens */
     c = fgetc(fp);
-    ready = parse(c, tmp, &count);
+    ready = parse(c, args);
     if (ready) {
       /* copy the non-blank tokens into the argument array */
-      args = calloc(count, sizeof(char*));
+      parsed_args = calloc(num_args, sizeof(char*));
       j = 0;
-      for (i = 0; i < count; ++i) {
-        if(!is_blank(tmp[i])) {
-          args[j] = calloc(ARRSIZE, sizeof(char));
-          strcpy(args[j++], tmp[i]);
+      for (i = 0; i < num_args; ++i) {
+        if(!is_blank(args[i])) {
+          parsed_args[j] = calloc(strlen(args[i]), sizeof(char));
+          strcpy(parsed_args[j++], args[i]);
         }
       }
+      num_args = j;
       /* check for the special case of assigning an alias */
-      if ((j >= 4) && (strcmp(args[0], "alias") == 0)
-          && (strcmp(args[2], "=") == 0)) {
+      if ((num_args >= 4) && (strcmp(parsed_args[0], "alias") == 0)
+          && (strcmp(parsed_args[2], "=") == 0)) {
         Alias a;
         memset(&a, 0, sizeof(Alias));
-        strcpy(a.custom, args[1]);
-        for (i = 0; i < j - 3; ++i) {
-          strcpy(a.original[i], args[3 + i]);
+        strcpy(a.custom, parsed_args[1]);
+        for (i = 0; i < num_args - 3; ++i) {
+          strcpy(a.original[i], parsed_args[3 + i]);
         }
+        a.num_original = i;
         aliases[num_aliases++] = a;
       }
       /* check for the special case of customizing the prompt */
-      else if ((j == 3) && (strcmp(args[0], "prompt") == 0)
-          && (strcmp(args[1], "=") == 0)) {
-        strcpy(prompt, args[2]);
+      else if ((num_args == 3) && (strcmp(parsed_args[0], "prompt") == 0)
+          && (strcmp(parsed_args[1], "=") == 0)) {
+        strcpy(prompt, parsed_args[2]);
       }
       /* execute the given command */
       else {
-        unalias(args);
-        execute(args);
+        unalias(parsed_args);
+        execute(parsed_args);
       }
-      for (i = 0; i < count; ++i) {
-        free(args[i]);
+      for (i = 0; i < num_args; ++i) {
+        free(parsed_args[i]);
       }
-      count = 0;
+      num_args = 0;
     }
     if (interactive && (c == '\n')) {
       printf("%s", prompt);
     }
   } while (c != EOF);
-  free(args);
+  free(parsed_args);
 }
 
 /* main: reads commands and args from stdin (batch file or
