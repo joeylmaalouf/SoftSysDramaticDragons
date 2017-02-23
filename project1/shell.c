@@ -27,8 +27,8 @@ typedef struct Flags {
 } Flags;
 
 typedef struct Alias {
-  char custom[ARRSIZE];
-  char original[ARRSIZE][ARRSIZE];
+  char* custom;
+  char** original;
   int num_original;
 } Alias;
 
@@ -39,6 +39,23 @@ size_t num_aliases;
 size_t num_args;
 
 char* prompt;
+
+/* alloc_copy: allocate enough memory for the given
+               string at the given pointer and copy it
+ * ptr: the pointer to assign
+ * str: the string to copy over
+ * reallocate: whether to reallocate space at the given pointer
+ * returns: the updated pointer */
+char* alloc_copy (char* ptr, char* str, bool reallocate) {
+  if (reallocate) {
+    ptr = realloc(ptr, strlen(str) * sizeof(char));
+  }
+  else {
+    ptr = calloc(strlen(str), sizeof(char));
+  }
+  strcpy(ptr, str);
+  return ptr;
+}
 
 /* parse: checks an individual character and either
  *        add it to a currently-building command or
@@ -157,17 +174,17 @@ void execute (char** args) {
  * returns: nothing */
 void unalias (char** args) {
   size_t i, j, k;
-  size_t token_count, prev_num;
+  size_t token_count, start_num, prev_num;
   size_t old_ind, new_ind;
-  for (i = 0; i < num_args; ++i) {
+  start_num = num_args;
+  for (i = 0; i < start_num; ++i) {
     for (j = 0; j < num_aliases; ++j) {
       token_count = aliases[j]->num_original;
       /* if any of the tokens match an alias, swap them out */
       if (strcmp(args[i], aliases[j]->custom) == 0) {
         /* if it's a single token, it's a simple replacement */
         if (token_count == 1) {
-          args[i] = realloc(args[i], strlen(aliases[j]->original[0]) * sizeof(char));
-          strcpy(args[i], aliases[j]->original[0]);
+          args[i] = alloc_copy(args[i], aliases[j]->original[0], true);
         }
         /* however, if we need to insert multiple tokens, we have
          * to allocate enough memory for the new ones, then shift
@@ -179,15 +196,13 @@ void unalias (char** args) {
           for (k = i + 1; k < prev_num; ++k) {
             old_ind = k;
             new_ind = old_ind - 1 + token_count;
-            args[new_ind] = calloc(strlen(args[old_ind]), sizeof(char));
-            strcpy(args[new_ind], args[old_ind]);
+            args[new_ind] = alloc_copy(args[new_ind], args[old_ind], false);
             free(args[old_ind]);
           }
           /* now that we've made enough room, we can actually
            * insert the new tokens into the args array */
           for (k = 0; k < token_count; ++k) {
-            args[i + k] = calloc(strlen(aliases[j]->original[k]), sizeof(char));
-            strcpy(args[i + k], aliases[j]->original[k]);
+            args[i + k] = alloc_copy(args[i + k], aliases[j]->original[k], false);
           }
         }
       }
@@ -223,8 +238,8 @@ void exec_loop (FILE* fp, bool interactive) {
       j = 0;
       for (i = 0; i < num_args; ++i) {
         if(!is_blank(args[i])) {
-          parsed_args[j] = calloc(strlen(args[i]), sizeof(char));
-          strcpy(parsed_args[j++], args[i]);
+          parsed_args[j] = alloc_copy(parsed_args[j], args[i], false);
+          ++j;
         }
       }
       num_args = j;
@@ -232,20 +247,21 @@ void exec_loop (FILE* fp, bool interactive) {
       if ((num_args >= 4) && (strcmp(parsed_args[0], "alias") == 0)
           && (strcmp(parsed_args[2], "=") == 0)) {
         Alias* a = malloc(sizeof(Alias));
-        strcpy(a->custom, parsed_args[1]);
-        for (i = 0; i < num_args - 3; ++i) {
-          strcpy(a->original[i], parsed_args[3 + i]);
+        a->custom = alloc_copy(a->custom, parsed_args[1], false);
+        a->num_original = num_args - 3;
+        a->original = calloc(a->num_original, sizeof(char*));
+        for (i = 3; i < num_args; ++i) {
+          a->original[i - 3] = calloc(strlen(parsed_args[i]), sizeof(char));
+          strcpy(a->original[i - 3], parsed_args[i]);
         }
-        a->num_original = i;
         ++num_aliases;
-        aliases = realloc(aliases, num_aliases * sizeof(Alias));
+        aliases = realloc(aliases, num_aliases * sizeof(Alias*));
         aliases[num_aliases - 1] = a;
       }
       /* check for the special case of customizing the prompt */
       else if ((num_args == 3) && (strcmp(parsed_args[0], "prompt") == 0)
           && (strcmp(parsed_args[1], "=") == 0)) {
-        prompt = realloc(prompt, strlen(parsed_args[2]) * sizeof(char));
-        strcpy(prompt, parsed_args[2]);
+        prompt = alloc_copy(prompt, parsed_args[2], true);
       }
       /* check for any alias replacements, then execute the given command */
       else {
@@ -268,8 +284,12 @@ void exec_loop (FILE* fp, bool interactive) {
 /* cleanup: free any leftover memory that we've dynamically allocated
  * returns: nothing */
 void cleanup () {
-  size_t i;
+  size_t i, j;
   for (i = 0; i < num_aliases; ++i) {
+    for (j = 0; j < aliases[i]->num_original; ++j) {
+      free(aliases[i]->original[j]);
+    }
+    free(aliases[i]->custom);
     free(aliases[i]);
   }
   free(aliases);
@@ -285,7 +305,7 @@ int main (int argc, char* argv[]) {
   FILE *fp;
   bool interactive;
   num_aliases = 0;
-  aliases = calloc(num_aliases, sizeof(Alias));
+  aliases = calloc(num_aliases, sizeof(Alias*));
   prompt = calloc(3, sizeof(char));
   strcpy(prompt, "» ");
 
