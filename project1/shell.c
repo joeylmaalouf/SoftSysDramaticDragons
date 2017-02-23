@@ -13,7 +13,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define ARRSIZE 256
+#define BUFSIZE 256
 
 typedef enum {
   false = 0,
@@ -64,7 +64,7 @@ char* alloc_copy (char* ptr, char* str, bool reallocate) {
  * c: character to parse
  * args: array of character arrays to build commands into
  * returns: flag telling main code whether a command is fully parsed */
-bool parse (char c, char args[ARRSIZE][ARRSIZE], Flags* flags) {
+bool parse (char c, char args[BUFSIZE][BUFSIZE], Flags* flags) {
   static int i_cmd = 0;
   static int i_char = 0;
   if (flags->in_comment && (c != '\n')) {
@@ -174,10 +174,10 @@ void execute (char** args) {
  * returns: nothing */
 void unalias (char** args) {
   size_t i, j, k;
-  size_t token_count, start_num, prev_num;
+  size_t token_count, old_count, new_count;
   size_t old_ind, new_ind;
-  start_num = num_args;
-  for (i = 0; i < start_num; ++i) {
+  old_count = num_args;
+  for (i = 0; i < old_count; ++i) {
     for (j = 0; j < num_aliases; ++j) {
       token_count = aliases[j]->num_original;
       /* if any of the tokens match an alias, swap them out */
@@ -190,10 +190,10 @@ void unalias (char** args) {
          * to allocate enough memory for the new ones, then shift
          * any that come after back by the right amount */
         else {
-          prev_num = num_args;
+          new_count = num_args;
           num_args = num_args - 1 + token_count;
           args = realloc(args, num_args * sizeof(char*));
-          for (k = i + 1; k < prev_num; ++k) {
+          for (k = i + 1; k < new_count; ++k) {
             old_ind = k;
             new_ind = old_ind - 1 + token_count;
             args[new_ind] = alloc_copy(args[new_ind], args[old_ind], false);
@@ -219,7 +219,7 @@ void unalias (char** args) {
 void exec_loop (FILE* fp, bool interactive) {
   char c;
   bool ready;
-  char args[ARRSIZE][ARRSIZE];
+  char args[BUFSIZE][BUFSIZE];
   char** parsed_args;
   size_t i, j;
   num_args = 0;
