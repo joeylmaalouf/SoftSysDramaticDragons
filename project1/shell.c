@@ -20,7 +20,11 @@ typedef enum {
   true = 1
 } bool;
 
-// struct for parse flags/indices?
+typedef struct Flags {
+  bool in_comment;
+  bool in_quote;
+  bool in_whitespace;
+} Flags;
 
 typedef struct Alias {
   char custom[ARRSIZE];
@@ -28,13 +32,13 @@ typedef struct Alias {
   int num_original;
 } Alias;
 
-Alias aliases[ARRSIZE];
+Alias** aliases;
 
 size_t num_aliases;
 
 size_t num_args;
 
-char prompt[ARRSIZE];
+char* prompt;
 
 /* parse: checks an individual character and either
  *        add it to a currently-building command or
@@ -43,58 +47,55 @@ char prompt[ARRSIZE];
  * c: character to parse
  * args: array of character arrays to build commands into
  * returns: flag telling main code whether a command is fully parsed */
-bool parse (char c, char args[ARRSIZE][ARRSIZE]) {
-  static bool in_comment = false;
-  static bool in_quote = false;
-  static bool in_whitespace = true;
+bool parse (char c, char args[ARRSIZE][ARRSIZE], Flags* flags) {
   static int i_cmd = 0;
   static int i_char = 0;
-  if (in_comment && (c != '\n')) {
+  if (flags->in_comment && (c != '\n')) {
     return false;
   }
   switch (c) {
     case '"':
-      in_quote = !in_quote;
+      flags->in_quote = !flags->in_quote;
       return false;
     case EOF:
     case '\n':
-      in_comment = false;
-      in_whitespace = false;
+      flags->in_comment = false;
+      flags->in_whitespace = false;
     case '\0':
     case ';':
       /* characters separating commands */
-      if (!in_quote) {
-        if (!in_whitespace) {
+      if (!flags->in_quote) {
+        if (!flags->in_whitespace) {
           args[i_cmd][i_char] = '\0';
           num_args = i_cmd + 1;
           i_cmd = 0;
           i_char = 0;
         }
-        in_whitespace = true;
+        flags->in_whitespace = true;
         return true;
       }
     case ' ':
     case '\t':
       /* characters separating arguments */
-      if (!in_quote) {
-        if (!in_whitespace) {
+      if (!flags->in_quote) {
+        if (!flags->in_whitespace) {
           args[i_cmd][i_char] = '\0';
           ++i_cmd;
           i_char = 0;
         }
-        in_whitespace = true;
+        flags->in_whitespace = true;
         return false;
       }
     default:
       /* cases dependent on other flags */
-      if ((c == '#') && !in_quote) {
-        in_comment = true;
+      if ((c == '#') && !flags->in_quote) {
+        flags->in_comment = true;
         return false;
       }
       /* characters composing tokens */
       args[i_cmd][i_char] = c;
       ++i_char;
-      in_whitespace = false;
+      flags->in_whitespace = false;
       return false;
   }
 }
@@ -160,13 +161,13 @@ void unalias (char** args) {
   size_t old_ind, new_ind;
   for (i = 0; i < num_args; ++i) {
     for (j = 0; j < num_aliases; ++j) {
-      token_count = aliases[j].num_original;
+      token_count = aliases[j]->num_original;
       /* if any of the tokens match an alias, swap them out */
-      if (strcmp(args[i], aliases[j].custom) == 0) {
+      if (strcmp(args[i], aliases[j]->custom) == 0) {
         /* if it's a single token, it's a simple replacement */
         if (token_count == 1) {
-          args[i] = calloc(strlen(aliases[j].original[0]), sizeof(char));
-          strcpy(args[i], aliases[j].original[0]);
+          args[i] = realloc(args[i], strlen(aliases[j]->original[0]) * sizeof(char));
+          strcpy(args[i], aliases[j]->original[0]);
         }
         /* however, if we need to insert multiple tokens, we have
          * to allocate enough memory for the new ones, then shift
@@ -185,8 +186,8 @@ void unalias (char** args) {
           /* now that we've made enough room, we can actually
            * insert the new tokens into the args array */
           for (k = 0; k < token_count; ++k) {
-            args[i + k] = calloc(strlen(aliases[j].original[k]), sizeof(char));
-            strcpy(args[i + k], aliases[j].original[k]);
+            args[i + k] = calloc(strlen(aliases[j]->original[k]), sizeof(char));
+            strcpy(args[i + k], aliases[j]->original[k]);
           }
         }
       }
@@ -207,11 +208,15 @@ void exec_loop (FILE* fp, bool interactive) {
   char** parsed_args;
   size_t i, j;
   num_args = 0;
+  Flags* flags = malloc(sizeof(Flags));
+  flags->in_comment = false;
+  flags->in_quote = false;
+  flags->in_whitespace = true;
 
   do {
     /* repeatedly check the input and split it into tokens */
     c = fgetc(fp);
-    ready = parse(c, args);
+    ready = parse(c, args, flags);
     if (ready) {
       /* copy the non-blank tokens into the argument array */
       parsed_args = calloc(num_args, sizeof(char*));
@@ -226,18 +231,20 @@ void exec_loop (FILE* fp, bool interactive) {
       /* check for the special case of assigning an alias */
       if ((num_args >= 4) && (strcmp(parsed_args[0], "alias") == 0)
           && (strcmp(parsed_args[2], "=") == 0)) {
-        Alias a;
-        memset(&a, 0, sizeof(Alias));
-        strcpy(a.custom, parsed_args[1]);
+        Alias* a = malloc(sizeof(Alias));
+        strcpy(a->custom, parsed_args[1]);
         for (i = 0; i < num_args - 3; ++i) {
-          strcpy(a.original[i], parsed_args[3 + i]);
+          strcpy(a->original[i], parsed_args[3 + i]);
         }
-        a.num_original = i;
-        aliases[num_aliases++] = a;
+        a->num_original = i;
+        ++num_aliases;
+        aliases = realloc(aliases, num_aliases * sizeof(Alias));
+        aliases[num_aliases - 1] = a;
       }
       /* check for the special case of customizing the prompt */
       else if ((num_args == 3) && (strcmp(parsed_args[0], "prompt") == 0)
           && (strcmp(parsed_args[1], "=") == 0)) {
+        prompt = realloc(prompt, strlen(parsed_args[2]) * sizeof(char));
         strcpy(prompt, parsed_args[2]);
       }
       /* check for any alias replacements, then execute the given command */
@@ -255,6 +262,18 @@ void exec_loop (FILE* fp, bool interactive) {
     }
   } while (c != EOF);
   free(parsed_args);
+  free(flags);
+}
+
+/* cleanup: free any leftover memory that we've dynamically allocated
+ * returns: nothing */
+void cleanup () {
+  size_t i;
+  for (i = 0; i < num_aliases; ++i) {
+    free(aliases[i]);
+  }
+  free(aliases);
+  free(prompt);
 }
 
 /* main: reads commands and args from stdin (batch file or
@@ -266,6 +285,8 @@ int main (int argc, char* argv[]) {
   FILE *fp;
   bool interactive;
   num_aliases = 0;
+  aliases = calloc(num_aliases, sizeof(Alias));
+  prompt = calloc(3, sizeof(char));
   strcpy(prompt, "» ");
 
   /* execute the contents of the config file if it exists */
@@ -288,6 +309,8 @@ int main (int argc, char* argv[]) {
 
   exec_loop(fp, interactive);
   printf("\n");
+
+  cleanup();
 
   return 0;
 }
