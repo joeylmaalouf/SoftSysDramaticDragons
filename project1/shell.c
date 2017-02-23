@@ -6,6 +6,7 @@
  * Sean Carter */
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,8 +41,8 @@ size_t num_args;
 
 char* prompt;
 
-/* alloc_copy: allocate enough memory for the given
-               string at the given pointer and copy it
+/* alloc_copy: allocate enough memory for the given string
+ *             at the given pointer and copy it over
  * ptr: the pointer to assign
  * str: the string to copy over
  * reallocate: whether to reallocate space at the given pointer
@@ -155,7 +156,8 @@ void execute (char** args) {
     /* make sure we can execute the command */
     exec_status = execvp(*args, args);
     if (exec_status < 0) {
-      fprintf(stderr, "Error: could not execute command \"%s\"\n", args[0]);
+      fprintf(stderr, "Error: could not execute command \"%s\"; (%d) %s\n",
+              args[0], errno, strerror(errno));
       return;
     }
   }
@@ -243,6 +245,8 @@ void exec_loop (FILE* fp, bool interactive) {
         }
       }
       num_args = j;
+      parsed_args = realloc(parsed_args, (num_args + 1) * sizeof(char*));
+      parsed_args[num_args] = NULL;
       /* check for the special case of assigning an alias */
       if ((num_args >= 4) && (strcmp(parsed_args[0], "alias") == 0)
           && (strcmp(parsed_args[2], "=") == 0)) {
