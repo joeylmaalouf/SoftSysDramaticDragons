@@ -1,2 +1,2 @@
-alias list = ls - ahls
+alias list = ls -ahls
 prompt = "$ "

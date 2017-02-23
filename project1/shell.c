@@ -3,8 +3,7 @@
  * loading settings from configuration files, and more.
  * Joey L. Maalouf
  * Apurva Raman
- * Sean Carter
-*/
+ * Sean Carter */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -37,14 +36,13 @@ size_t num_args;
 
 char prompt[ARRSIZE];
 
-/* parse: check an individual character and either
+/* parse: checks an individual character and either
  *        add it to a currently-building command or
  *        start a new command based on the presence
  *        of whitespace or other separators
  * c: character to parse
  * args: array of character arrays to build commands into
- * returns: flag telling main code whether a command is fully parsed
- */
+ * returns: flag telling main code whether a command is fully parsed */
 bool parse (char c, char args[ARRSIZE][ARRSIZE]) {
   static bool in_comment = false;
   static bool in_quote = false;
@@ -103,8 +101,7 @@ bool parse (char c, char args[ARRSIZE][ARRSIZE]) {
 
 /* is_blank: checks if the given string is just whitespace
  * string: the string to parse
- * returns: flag saying whether the string is only whitespace
- */
+ * returns: flag saying whether the string is only whitespace */
 bool is_blank (char* string) {
   int l = strlen(string);
   size_t i;
@@ -124,8 +121,7 @@ bool is_blank (char* string) {
  *          to make sure that the command is not empty
  * args: array of character arrays representing
  *       the command and any other arguments
- * returns: nothing
- */
+ * returns: nothing */
 void execute (char** args) {
   pid_t pid;
   int exec_status;
@@ -152,30 +148,50 @@ void execute (char** args) {
   }
 }
 
-/* unalias: ...
- * alias: ...
- * returns: ...
- */
+/* unalias: iterates through all of the given arguments and
+*           replaces any that are aliases, allocating more
+ *          memory and shifting later elements as needed
+ * args: array of character arrays representing
+ *       the commands to check for aliases
+ * returns: nothing */
 void unalias (char** args) {
-  size_t i, j;
+  size_t i, j, k;
+  size_t token_count, prev_num;
+  size_t old_ind, new_ind;
   for (i = 0; i < num_args; ++i) {
     for (j = 0; j < num_aliases; ++j) {
+      token_count = aliases[j].num_original;
+      /* if any of the tokens match an alias, swap them out */
       if (strcmp(args[i], aliases[j].custom) == 0) {
-        if (aliases[j].num_original == 1) {
+        /* if it's a single token, it's a simple replacement */
+        if (token_count == 1) {
+          args[i] = calloc(strlen(aliases[j].original[0]), sizeof(char));
           strcpy(args[i], aliases[j].original[0]);
         }
+        /* however, if we need to insert multiple tokens, we have
+         * to allocate enough memory for the new ones, then shift
+         * any that come after back by the right amount */
         else {
+          prev_num = num_args;
+          num_args = num_args - 1 + token_count;
           args = realloc(args, num_args * sizeof(char*));
-          // ...
+          for (k = i + 1; k < prev_num; ++k) {
+            old_ind = k;
+            new_ind = old_ind - 1 + token_count;
+            args[new_ind] = calloc(strlen(args[old_ind]), sizeof(char));
+            strcpy(args[new_ind], args[old_ind]);
+            free(args[old_ind]);
+          }
+          /* now that we've made enough room, we can actually
+           * insert the new tokens into the args array */
+          for (k = 0; k < token_count; ++k) {
+            args[i + k] = calloc(strlen(aliases[j].original[k]), sizeof(char));
+            strcpy(args[i + k], aliases[j].original[k]);
+          }
         }
       }
     }
   }
-  // check if any command in args is aliased to anything; if so, substitute it back
-  // if len(alias.original) > 1, they have to be new char*s so the array has to shift
-  // new_size = len(args) + len(alias.original) - 1
-  // args = realloc(args, new_size)
-  // new[i] = old[i - len(alias.original) - 1] for i = new_size -> replacement index
 }
 
 /* exec_loop: loops through every line of a file,
@@ -183,8 +199,7 @@ void unalias (char** args) {
  *            into execute()
  * fp: file pointer to read commands from
  * interactive: flag for the run mode
- * returns: nothing
- */
+ * returns: nothing */
 void exec_loop (FILE* fp, bool interactive) {
   char c;
   bool ready;
@@ -225,7 +240,7 @@ void exec_loop (FILE* fp, bool interactive) {
           && (strcmp(parsed_args[1], "=") == 0)) {
         strcpy(prompt, parsed_args[2]);
       }
-      /* execute the given command */
+      /* check for any alias replacements, then execute the given command */
       else {
         unalias(parsed_args);
         execute(parsed_args);
@@ -246,8 +261,7 @@ void exec_loop (FILE* fp, bool interactive) {
  *       user input) and executes them in order after parsing
  * argc: the number of command line arguments
  * argv: the values of command line arguments
- * returns: exit code
- */
+ * returns: exit code */
 int main (int argc, char* argv[]) {
   FILE *fp;
   bool interactive;
@@ -261,7 +275,8 @@ int main (int argc, char* argv[]) {
   }
 
   if (argc > 1) {
-    // TODO: change to accept n-many files to run in order, instead of restricting batch mode to 1 file?
+    // TODO: change to accept n-many files to run in order,
+    // instead of restricting batch mode to 1 file?
     fp = fopen(argv[1], "r");
     interactive = false;
   }
