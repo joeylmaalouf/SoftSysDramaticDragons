@@ -298,6 +298,7 @@ void cleanup () {
   }
   free(aliases);
   free(prompt);
+  printf("\n");
 }
 
 /* main: reads commands and args from stdin (batch file or
@@ -307,7 +308,7 @@ void cleanup () {
  * returns: exit code */
 int main (int argc, char* argv[]) {
   FILE *fp;
-  bool interactive;
+  size_t i;
   num_aliases = 0;
   aliases = calloc(num_aliases, sizeof(Alias*));
   prompt = calloc(3, sizeof(char));
@@ -316,23 +317,21 @@ int main (int argc, char* argv[]) {
   /* execute the contents of the config file if it exists */
   if (access(".shellrc", F_OK) != -1) {
     fp = fopen(".shellrc", "r");
-    exec_loop(fp, 0);
+    exec_loop(fp, false);
+    fclose(fp);
   }
 
   if (argc > 1) {
-    // TODO: change to accept n-many files to run in order,
-    // instead of restricting batch mode to 1 file?
-    fp = fopen(argv[1], "r");
-    interactive = false;
+    for (i = 1; i < argc; ++i) {
+      fp = fopen(argv[1], "r");
+      exec_loop(fp, false);
+      fclose(fp);
+    }
   }
   else {
-    fp = stdin;
-    interactive = true;
     printf("%s", prompt);
+    exec_loop(stdin, true);
   }
-
-  exec_loop(fp, interactive);
-  printf("\n");
 
   cleanup();
 
