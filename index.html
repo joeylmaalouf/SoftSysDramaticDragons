@@ -29,10 +29,10 @@
         </p>
 
         <h2>Implementation</h2>
-        <h4>Parsing</h4>
         <p>
           Specifically, we wrote a program that can parse user input into tokens and search the filesystem for binaries matching the commands, running them with any supplied arguments and parameters. In between, it does things like check for custom "meta"-cases (like setting an alias or custom prompt), as well as un-alias any custom tokens into their original counterparts. It pulls its input from standard input in interactive mode, or a supplied file (or multiple) in batch mode.
         </p>
+        <h4>Parsing</h4>
         <p>
           We identify commands by splitting input arguments into an array of character arrays, parsing the input one character at a time. Each character array is a single token (either the name of a command to run, or an argument for a previously-given command), so the array of arrays represents a complete command. Once the parser reaches a character that indicates the end of a command (e.g. ';'), it returns a flag that tells the rest of the code that it's time for execution (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/parsing.c#L38">parsing.c L38</a>).
         </p>
