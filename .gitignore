@@ -11,3 +11,6 @@
 
 # Unignore Makefiles
 !Makefile
+
+# Ignore compiled object files
+*.o
