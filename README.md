@@ -5,11 +5,11 @@
 #### Joey Maalouf, Apurva Raman, Sean Carter
 
 ### About `shell`
-`shell` is a Unix shell written in C modeled after `bash`. It supports a batch mode and loading specific batch configuration files, an interactive mode, aliasing, and running processes. For more details, see our [full report on the project website](https://joeylmaalouf.github.io/SoftSysDramaticDragons).
+
+`shell` is a Unix shell written in `C` and modeled after `bash`. It supports an interactive mode, a batch file mode, configuration files, aliasing, and more. For further details, see our [full report on the project website](https://joeylmaalouf.github.io/SoftSysDramaticDragons).
 
 
 ### Getting Started
-To run `shell`, you do not need anything that does not come with a typical Unix environment.
 
 Once you clone this repository, enter its directory and run:
 
@@ -18,13 +18,15 @@ cd project1
 make shell
 ```
 
+All of `shell`'s dependencies are standard `C` libraries.
 
 ### Usage
 
 #### Running the shell
+
 After running `make`, you can run `shell` with
 ```
-./shell [BATCHFILE]
+./shell [batchfile1] ... [batchfileN]
 ```
 for batch mode or just
 ```
@@ -51,4 +53,5 @@ This tests that the code correctly:
 
 
 ### License
+
 This software is provided under the [MIT License](https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/LICENSE.md).
