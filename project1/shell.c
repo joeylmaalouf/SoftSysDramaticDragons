@@ -205,12 +205,32 @@ void unalias (char** args) {
           /* now that we've made enough room, we can actually
            * insert the new tokens into the args array */
           for (k = 0; k < token_count; ++k) {
-            args[i + k] = alloc_copy(args[i + k], aliases[j]->original[k], false);
+            args[i + k] = alloc_copy(args[i + k], aliases[j]->original[k],
+                                     false);
           }
         }
       }
     }
   }
+}
+
+/* set_alias: adds an alias to the list
+ *            from the given args assignment
+ * args: the arguments list
+ * returns: nothing */
+void set_alias (char** args) {
+  size_t i;
+  Alias* a = malloc(sizeof(Alias));
+  a->custom = alloc_copy(a->custom, args[1], false);
+  a->num_original = num_args - 3;
+  a->original = calloc(a->num_original, sizeof(char*));
+  for (i = 3; i < num_args; ++i) {
+    a->original[i - 3] = calloc(strlen(args[i]), sizeof(char));
+    strcpy(a->original[i - 3], args[i]);
+  }
+  ++num_aliases;
+  aliases = realloc(aliases, num_aliases * sizeof(Alias*));
+  aliases[num_aliases - 1] = a;
 }
 
 /* exec_loop: loops through every line of a file,
@@ -253,17 +273,7 @@ void exec_loop (FILE* fp, bool interactive) {
       /* check for the special case of assigning an alias */
       if ((num_args >= 4) && (strcmp(parsed_args[0], "alias") == 0)
           && (strcmp(parsed_args[2], "=") == 0)) {
-        Alias* a = malloc(sizeof(Alias));
-        a->custom = alloc_copy(a->custom, parsed_args[1], false);
-        a->num_original = num_args - 3;
-        a->original = calloc(a->num_original, sizeof(char*));
-        for (i = 3; i < num_args; ++i) {
-          a->original[i - 3] = calloc(strlen(parsed_args[i]), sizeof(char));
-          strcpy(a->original[i - 3], parsed_args[i]);
-        }
-        ++num_aliases;
-        aliases = realloc(aliases, num_aliases * sizeof(Alias*));
-        aliases[num_aliases - 1] = a;
+        set_alias(parsed_args);
       }
       /* check for the special case of customizing the prompt */
       else if ((num_args == 3) && (strcmp(parsed_args[0], "prompt") == 0)
