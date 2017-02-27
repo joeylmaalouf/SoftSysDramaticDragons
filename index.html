@@ -36,6 +36,10 @@
           Parsing is done character-by-character, which allows for immediate execution upon reading any command-terminating character, but requires us to keep track of some state information. We did this with a struct holding booleans for parsing flags and integers for indices.
         </p>
         <p>
+
+        Aliases are created as a set of key-value pairs: aliases as the keys, commands and additional arguments as values <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L11">(alias.c, l 11)</a>. For each argument passed into the program, we identify aliases <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L41">(alias.c, l 41)</a> and replace them with their corresponding values. This is a linear search through the alias list, so it would be inefficient for large numbers of aliases, but we do not expect a given user to have enough aliases defined to have a significant impact on the speed. If an alias maps to a value with multiple tokens, additional space is allocated <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L49">(alias.c, l 49)</a> and all of the other arguments are shifted over in the array to make room for the additional tokens and the alias is replaced <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L61">(alias.c, l 61)</a>.
+        </p>
+        <p>
           All of the memory for the various arrays and structs is dynamically allocated and freed, with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead.
         </p>
 
