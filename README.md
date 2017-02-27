@@ -6,7 +6,7 @@
 
 ### About `shell`
 
-`shell` is a Unix shell written in `C` and modeled after `bash`. It supports an interactive mode, a batch file mode, configuration files, aliasing, and more. For further details, see our [full report on the project website](https://joeylmaalouf.github.io/SoftSysDramaticDragons).
+`shell` is a Unix shell written in C and modeled after `bash`. It supports an interactive mode, a batch file mode, configuration files, aliasing, and more. For further details, see our [full report on the project website](https://joeylmaalouf.github.io/SoftSysDramaticDragons).
 
 
 ### Getting Started
@@ -18,7 +18,7 @@ cd project1
 make shell
 ```
 
-All of `shell`'s dependencies are standard `C` libraries.
+All of `shell`'s dependencies are standard C libraries.
 
 ### Usage
 
