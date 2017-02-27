@@ -318,19 +318,26 @@ int main (int argc, char* argv[]) {
   strcpy(prompt, "» ");
 
   /* execute the contents of the config file if it exists */
-  if (access(".shellrc", F_OK) != -1) {
+  if (access(".shellrc", R_OK) != -1) {
     fp = fopen(".shellrc", "r");
     exec_loop(fp, false);
     fclose(fp);
   }
 
+  /* loop over multiple batch files if provided */
   if (argc > 1) {
     for (i = 1; i < argc; ++i) {
-      fp = fopen(argv[1], "r");
-      exec_loop(fp, false);
-      fclose(fp);
+      if (access(argv[i], R_OK) != -1) {
+        fp = fopen(argv[i], "r");
+        exec_loop(fp, false);
+        fclose(fp);
+      }
+      else {
+        fprintf(stderr, "Error: could not find file \"%s\"\n", argv[i]);
+      }
     }
   }
+  /* otherwise, take interactive input */
   else {
     printf("%s", prompt);
     exec_loop(stdin, true);
