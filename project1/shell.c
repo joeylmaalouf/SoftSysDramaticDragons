@@ -21,11 +21,13 @@ typedef enum {
   true = 1
 } bool;
 
-typedef struct Flags {
+typedef struct State {
   bool in_comment;
   bool in_quote;
   bool in_whitespace;
-} Flags;
+  int i_cmd;
+  int i_char;
+} State;
 
 typedef struct Alias {
   char* custom;
@@ -64,56 +66,55 @@ char* alloc_copy (char* ptr, char* str, bool reallocate) {
  *        of whitespace or other separators
  * c: character to parse
  * args: array of character arrays to build commands into
+ * state: state information about the current command
  * returns: flag telling main code whether a command is fully parsed */
-bool parse (char c, char args[BUFSIZE][BUFSIZE], Flags* flags) {
-  static int i_cmd = 0;
-  static int i_char = 0;
-  if (flags->in_comment && (c != '\n')) {
+bool parse (char c, char args[BUFSIZE][BUFSIZE], State* state) {
+  if (state->in_comment && (c != '\n')) {
     return false;
   }
   switch (c) {
     case '"':
-      flags->in_quote = !flags->in_quote;
+      state->in_quote = !state->in_quote;
       return false;
     case EOF:
     case '\n':
-      flags->in_comment = false;
-      flags->in_whitespace = false;
+      state->in_comment = false;
+      state->in_whitespace = false;
     case '\0':
     case ';':
       /* characters separating commands */
-      if (!flags->in_quote) {
-        if (!flags->in_whitespace) {
-          args[i_cmd][i_char] = '\0';
-          num_args = i_cmd + 1;
-          i_cmd = 0;
-          i_char = 0;
+      if (!state->in_quote) {
+        if (!state->in_whitespace) {
+          args[state->i_cmd][state->i_char] = '\0';
+          num_args = state->i_cmd + 1;
+          state->i_cmd = 0;
+          state->i_char = 0;
         }
-        flags->in_whitespace = true;
+        state->in_whitespace = true;
         return true;
       }
     case ' ':
     case '\t':
       /* characters separating arguments */
-      if (!flags->in_quote) {
-        if (!flags->in_whitespace) {
-          args[i_cmd][i_char] = '\0';
-          ++i_cmd;
-          i_char = 0;
+      if (!state->in_quote) {
+        if (!state->in_whitespace) {
+          args[state->i_cmd][state->i_char] = '\0';
+          ++(state->i_cmd);
+          state->i_char = 0;
         }
-        flags->in_whitespace = true;
+        state->in_whitespace = true;
         return false;
       }
     default:
       /* cases dependent on other flags */
-      if ((c == '#') && !flags->in_quote) {
-        flags->in_comment = true;
+      if ((c == '#') && !state->in_quote) {
+        state->in_comment = true;
         return false;
       }
       /* characters composing tokens */
-      args[i_cmd][i_char] = c;
-      ++i_char;
-      flags->in_whitespace = false;
+      args[state->i_cmd][state->i_char] = c;
+      ++(state->i_char);
+      state->in_whitespace = false;
       return false;
   }
 }
@@ -225,15 +226,17 @@ void exec_loop (FILE* fp, bool interactive) {
   char** parsed_args;
   size_t i, j;
   num_args = 0;
-  Flags* flags = malloc(sizeof(Flags));
-  flags->in_comment = false;
-  flags->in_quote = false;
-  flags->in_whitespace = true;
+  State* state = malloc(sizeof(State));
+  state->in_comment = false;
+  state->in_quote = false;
+  state->in_whitespace = true;
+  state->i_cmd = 0;
+  state->i_char = 0;
 
   do {
     /* repeatedly check the input and split it into tokens */
     c = fgetc(fp);
-    ready = parse(c, args, flags);
+    ready = parse(c, args, state);
     if (ready) {
       /* copy the non-blank tokens into the argument array */
       parsed_args = calloc(num_args, sizeof(char*));
@@ -282,7 +285,7 @@ void exec_loop (FILE* fp, bool interactive) {
     }
   } while (c != EOF);
   free(parsed_args);
-  free(flags);
+  free(state);
 }
 
 /* cleanup: free any leftover memory that we've dynamically allocated
