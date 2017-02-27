@@ -59,7 +59,7 @@
         </p>
         <h3>Memory</h3>
         <p>
-          All of the memory for the various arrays and structs is dynamically allocated (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/memory.c#L13">memory.c L13</a>) and freed (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/memory.c#L26">memory.c L26</a>), with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead.
+          All of the memory for the various arrays and structs is dynamically allocated (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/memory.c#L13">memory.c L13</a>) and freed (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/memory.c#L26">memory.c L26</a>), with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead. Initially, we actually allocated everything statically, for ease of use. However, once we were comfortable with using the malloc function family, we were able to refactor the project to allocate memory dynamically instead (but not without some difficulty). Debugging segfaults can be unusually frustrating, since there's no meaningful error message other than "something related to memory went wrong".
         </p>
 
         <h2>Results</h2>
