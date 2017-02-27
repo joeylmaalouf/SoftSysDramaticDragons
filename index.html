@@ -12,17 +12,15 @@
     <div class="container">
       <section id="main_content">
 
-        <h4><a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/tree/master">Check out the repo!</a></h4>
         <br>
+        <h4><a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/tree/master">Check out the repo!</a></h4>
         <h1>Project 1: Shell</h1>
         
         <h3>Joey Maalouf, Apurva Raman, Sean Carter</h3>
 
         <h2>Abstract</h2>
         <p>
-          For this project, we aimed to create a functional <a href="http://linuxcommand.org/lc3_lts0010.php">shell</a>, that would be able to access and use built in linux commands. Our implimentation allows for many of the basic features that a user might expect; these are features such as an interactive terminal mode, a batch file mode, configuration files, and aliases.
-
-          Basic features of the parsing include multiline quotes and comments, commands separated by semicolons, and more. It also, of course, features a customizable prompt.
+          For this project, we aimed to create a functional <a href="http://linuxcommand.org/lc3_lts0010.php">shell</a> that would be able to run on a Linux system and accept the typical commands. Our implementation allows for many of the basic features that a user might expect, such as an interactive terminal mode, a batch file mode, configuration files, and aliases.
         </p>
 
         <h2>Background</h2>
@@ -32,7 +30,13 @@
 
         <h2>Implementation</h2>
         <p>
-          ...
+          Specifically, we designed and implemented a program that would parse user input into tokens and search the filesystem for binaries matching the commands, running them with any supplied arguments and parameters. In between, it does things like check for custom "meta"-cases (like setting an alias or custom prompt), as well as un-alias any custom tokens into their original counterparts. It pulls its input from standard input in interactive mode, or a supplied file (or multiple) in batch mode.
+        </p>
+        <p>
+          Parsing is done character-by-character, which allows for immediate execution upon reading any command-terminating character, but requires us to keep track of some state information. We did this with a struct holding booleans for parsing flags and integers for indices.
+        </p>
+        <p>
+          All of the memory for the various arrays and structs is dynamically allocated and freed, with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead.
         </p>
 
         <h2>Results</h2>
