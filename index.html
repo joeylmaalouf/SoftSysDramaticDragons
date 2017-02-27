@@ -25,7 +25,7 @@
 
         <h2>Background</h2>
         <p>
-          Most of our research and understanding comes from the <code>bash</code> shell that is used by default in most Linux distributions. While trying to identify essential features, we referred to the <a href="https://www.gnu.org/software/bash/manual/bashref.html">bash reference manual</a> provided by gnu.org. We were also inspired by a number of assignments used at other colleges, such as <a href="https://www.cs.purdue.edu/homes/grr/SystemsProgrammingBook/Book/Chapter5-WritingYourOwnShell.pdf">this one</a> from Purdue University and <a href="http://pages.cs.wisc.edu/~dusseau/Classes/CS537-F07/Projects/P1/p1.html">this one</a> from the University of Wisconsin-Madison.
+          Most of our research and understanding comes from the bash shell that is used by default in most Linux distributions. While trying to identify essential features, we referred to the <a href="https://www.gnu.org/software/bash/manual/bashref.html">bash reference manual</a> provided by gnu.org. We were also inspired by a number of assignments used at other colleges, such as <a href="https://www.cs.purdue.edu/homes/grr/SystemsProgrammingBook/Book/Chapter5-WritingYourOwnShell.pdf">this one</a> from Purdue University and <a href="http://pages.cs.wisc.edu/~dusseau/Classes/CS537-F07/Projects/P1/p1.html">this one</a> from the University of Wisconsin-Madison.
         </p>
 
         <h2>Implementation</h2>
@@ -36,8 +36,7 @@
           Parsing is done character-by-character, which allows for immediate execution upon reading any command-terminating character, but requires us to keep track of some state information. We did this with a struct holding booleans for parsing flags and integers for indices.
         </p>
         <p>
-
-        Aliases are created as a set of key-value pairs: aliases as the keys, commands and additional arguments as values <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L11">(alias.c, l 11)</a>. For each argument passed into the program, we identify aliases <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L41">(alias.c, l 41)</a> and replace them with their corresponding values. This is a linear search through the alias list, so it would be inefficient for large numbers of aliases, but we do not expect a given user to have enough aliases defined to have a significant impact on the speed. If an alias maps to a value with multiple tokens, additional space is allocated <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L49">(alias.c, l 49)</a> and all of the other arguments are shifted over in the array to make room for the additional tokens and the alias is replaced <a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L61">(alias.c, l 61)</a>.
+        Aliases are created as a set of key-value pairs with the aliases as the keys and the original commands and any additional arguments as  the values (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L11">alias.c L11</a>). For each argument passed into the program, we check for any matching aliases (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L41">alias.c L41</a>) and replace them with their corresponding values. This is a linear search through the alias list, so it would be inefficient for large numbers of aliases, but we do not expect a given user to have enough aliases defined to have a significant impact on the speed. If an alias maps to a value with multiple tokens, additional space is allocated (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L49">(alias.c L49</a>), all of the other arguments are shifted over in the array to make room for the additional tokens, and the alias is replaced (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L61">alias.c, L61</a>).
         </p>
         <p>
           All of the memory for the various arrays and structs is dynamically allocated and freed, with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead.
@@ -45,7 +44,9 @@
 
         <h2>Results</h2>
         <p>
+          The first of our videos demonstrates usage of the .shellrc file, interactive mode, and aliases.
           <div style="position:relative;padding-bottom:60%"><iframe src="./images/interactive.mp4" frameborder="0" scrolling="no" width="100%" height="100%" style="position:absolute;top:0;left:0;" allowfullscreen></iframe></div>
+          Our second video shows how to use the batch file mode.
           <div style="position:relative;padding-bottom:60%"><iframe src="./images/batch.mp4"       frameborder="0" scrolling="no" width="100%" height="100%" style="position:absolute;top:0;left:0;" allowfullscreen></iframe></div>
         </p>
 
