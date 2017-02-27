@@ -29,34 +29,37 @@
         </p>
 
         <h2>Implementation</h2>
+        <h4>Parsing</h4>
         <p>
-          Specifically, we designed and implemented a program that would parse user input into tokens and search the filesystem for binaries matching the commands, running them with any supplied arguments and parameters. In between, it does things like check for custom "meta"-cases (like setting an alias or custom prompt), as well as un-alias any custom tokens into their original counterparts. It pulls its input from standard input in interactive mode, or a supplied file (or multiple) in batch mode.
+          Specifically, we wrote a program that can parse user input into tokens and search the filesystem for binaries matching the commands, running them with any supplied arguments and parameters. In between, it does things like check for custom "meta"-cases (like setting an alias or custom prompt), as well as un-alias any custom tokens into their original counterparts. It pulls its input from standard input in interactive mode, or a supplied file (or multiple) in batch mode.
         </p>
         <p>
-          We identify commands by splitting input arguments into an array of character arrays, parsing the input one character at a time. Each character array is a single token - either the name of a command to run, or an argument for a command. Once the parser reaches a character that indicates the end of a command (a ';', or a newline) it signals to the rest of the code that a command is ready.
-
-          One of the consequences of parsing a single character at a time is that we had to keep track of a lot of state information, such as where the next character would go in the args array, or whether the character was in a comment or quote block. We created a struct to hold all of this information.
-
-          <pre><code>
-          typedef struct State {
-            bool in_comment;
-            bool in_quote;
-            bool in_whitespace;
-            int i_cmd;
-            int i_char;
-          } State;
-          </code></pre>
-
-          This strategy makes it easier to add new text parsing features - all text parsing features have been simplified into logic based on their boolean flags. New features would just slightly change decisions about when to write into the array, and increment the command pointer. This is a useful improvement from our first state tracker, which was a large collection of static variables at the start of the function. 
+          We identify commands by splitting input arguments into an array of character arrays, parsing the input one character at a time. Each character array is a single token (either the name of a command to run, or an argument for a previously-given command), so the array of arrays represents a complete command. Once the parser reaches a character that indicates the end of a command (e.g. ';'), it returns a flag that tells the rest of the code that it's time for execution (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/parsing.c#L38">parsing.c L38</a>).
         </p>
         <p>
-          Execution is relatively simple; after properly parsing the arguments (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/shell.c#L66">shell.c L66</a>) and checking for special cases (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/shell.c#L81">shell.c L81</a>), we fork a new process (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/shell.c#L22">shell.c L22</a>) and execute the given array of strings as a command (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/shell.c#L29">shell.c L29</a>).
+          One of the consequences of parsing a single character at a time is that we had to keep track of a lot of state information, such as where the next character would go in the args array, or whether the character was in a comment or quote block. To hold all of this state information, we used a struct:
         </p>
+<pre><code>typedef struct State {
+  bool in_comment;
+  bool in_quote;
+  bool in_whitespace;
+  int i_cmd;
+  int i_char;
+} State;</code></pre>
         <p>
-          Aliases are created as a set of key-value pairs with the aliases as the keys and the original commands and any additional arguments as  the values (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L11">alias.c L11</a>). For each argument passed into the program, we check for any matching aliases (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L41">alias.c L41</a>) and replace them with their corresponding values. This is a linear search through the alias array, so it would be inefficient for large numbers of aliases, but we do not expect a given user to have enough aliases defined to have a significant impact on the speed. If an alias maps to a value with multiple tokens, additional space is allocated (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L49">alias.c L49</a>), all of the other arguments are shifted over in the array to make room for the additional tokens, and the alias is replaced (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L61">alias.c L61</a>).
+          This strategy makes it easier to add new text parsing features, should any arise; all of the parsing features have been simplified into logic based on their boolean flags, so new ones would just slightly change decisions about when to write into the array and increment the command pointer. This is a useful improvement from our first state tracker, which was a large collection of static variables at the start of the function.
         </p>
+        <h4>Execution</h4>
         <p>
-          All of the memory for the various arrays and structs is dynamically allocated and freed, with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead.
+          Execution is relatively simple; after properly parsing the arguments and checking for special cases (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/shell.c#L81">shell.c L81</a>), we fork a new process and execute the given array of strings as a command (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/shell.c#L29">shell.c L29</a>).
+        </p>
+        <h4>Aliases</h4>
+        <p>
+          Aliases are created as a set of key-value pairs with the aliases as the keys and the original commands and any additional arguments as the values (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L11">alias.c L11</a>). For each argument passed into the program, we check for any matching aliases (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L41">alias.c L41</a>) and replace them with their corresponding values. This is a linear search through the alias array, so it would be inefficient for large numbers of aliases, but we do not expect a given user to have enough aliases defined to have a significant impact on the speed. If an alias maps to a value with multiple tokens, additional space is allocated (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L49">alias.c L49</a>), all of the other arguments are shifted over in the array to make room for the additional tokens, and the alias is replaced (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/alias.c#L61">alias.c L61</a>).
+        </p>
+        <h4>Memory</h4>
+        <p>
+          All of the memory for the various arrays and structs is dynamically allocated (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/memory.c#L13">memory.c L13</a>) and freed (<a href="https://github.com/joeylmaalouf/SoftSysDramaticDragons/blob/master/project1/memory.c#L26">memory.c L26</a>), with the exception of the initial input buffer. This allows us to minimize wasted space in memory, at the expense of some processing overhead.
         </p>
 
         <h2>Results</h2>
