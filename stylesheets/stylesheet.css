@@ -1,14 +1,14 @@
 body {
   margin: 0;
   padding: 0;
-  background: #151515 url("../images/bkg.png") 0 0;
-  color: #eaeaea;
+  /* background: #151515 url("../images/bkg-dark.png") 0 0;
+  color: #eaeaea; */
+  background: #eaeaea url("../images/bkg-light.png") 0 0;
+  color: #151515;
   font: 16px;
   line-height: 1.5;
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
 }
-
-/* General & 'Reset' Stuff */
 
 .container {
   width: 90%;
@@ -26,14 +26,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 li {
-  line-height: 1.4 ;
+  line-height: 1.4;
 }
-
-/* Header, <header>
-   header   - container
-   h1       - project name
-   h2       - project description
-*/
 
 header {
   background: rgba(0, 0, 0, 0.1);
@@ -73,9 +67,6 @@ header h2 {
   text-align: center;
   margin: 0;
 }
-
-/* Main Content
-*/
 
 #main_content {
   width: 100%;
@@ -185,9 +176,6 @@ hr {
   color: #b5e853;
 }
 
-/* Buttons
-*/
-
 .btn {
   display: inline-block;
   background: -webkit-linear-gradient(top, rgba(40, 40, 40, 0.3), rgba(35, 35, 35, 0.3) 50%, rgba(10, 10, 10, 0.3) 50%, rgba(0, 0, 0, 0.3));
@@ -217,21 +205,10 @@ hr {
   float: left;
 }
 
-.btn-github .icon {
-  opacity: 0.6;
-  background: url("../images/blacktocat.png") 0 0 no-repeat;
-}
-
-/* Links
-   a, a:hover, a:visited
-*/
-
 a {
   color: #63c0f5;
   text-shadow: 0 0 5px rgba(104, 182, 255, 0.5);
 }
-
-/* Clearfix */
 
 .cf:before, .cf:after {
   content:"";
